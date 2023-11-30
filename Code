@@ -1,0 +1,53 @@
+var CH = ee.FeatureCollection('USDOS/LSIB_SIMPLE/2017')
+  .filter(ee.Filter.eq('country_co', 'CH'));
+
+var dataset = ee.Image('CGIAR/SRTM90_V4');
+var dataset = dataset.clip(CH)
+var elevation = dataset.select('elevation');
+var slope = ee.Terrain.slope(elevation);
+
+
+//Map.setCenter(-112.8598, 36.2841, 10);
+Map.addLayer(slope, {min: 0, max: 10}, 'slope', 0);
+Map.addLayer(elevation, {min: 0, max: 6000}, 'elevation',0);
+
+
+var elevationreclass = ee.Image(1)
+      .where(elevation.lt(200), 1)
+      .where(elevation.gt(200).and(elevation.lt(1000)), 2)
+      .where(elevation.gt(1000).and(elevation.lt(2000)), 3)
+      .where(elevation.gt(2000).and(elevation.lt(4000)), 4)
+      .where(elevation.gt(4000).and(elevation.lt(5000)), 5)
+      .where(elevation.gt(5000).and(elevation.lt(5500)), 6)
+      .where(elevation.gt(5500).and(elevation.lt(6000)), 7)
+      .where(elevation.gt(6000), 8)
+
+
+
+var visparams = {
+   "opacity": 1,
+    "min": 1,
+    "max": 8,
+    "palette": ["#19ff12","#d6ff14","#fffd3d", "147218", "ffac18", "fe3c19", "#2167ff","#f216ff"]
+}
+
+Map.addLayer(elevationreclass.clip(CH), visparams,"reclass", 1);
+
+print(elevationreclass.clip(CH))
+
+
+var legend = ui.Panel({style: {position: 'middle-right',padding: '10px 25px'}});
+var legendTitle = ui.Label({value: 'Elevation(m)',style: {fontWeight: 'bold' ,fontSize: '12px', margin: '3px',padding: '3px'}});
+legend.add(legendTitle);
+//_______Creates and styles 1 row of the legend______________________
+var Row = function(color, name) 
+      {var colorBox = ui.Label({style: { backgroundColor: color, padding: '8px', margin: '0 0 4px 0'}});
+      var description = ui.Label({value: name,style: {margin: '0 0 4px 6px'}});
+      return ui.Panel({widgets: [colorBox, description],layout: ui.Panel.Layout.Flow('horizontal')})};
+
+var palette =["#19ff12","#d6ff14","#fffd3d", "147218", "ffac18", "fe3c19", "#2167ff","#f216ff"];
+
+var names = ['<200','200-1000','1000-2000', '2000-4000','4000-5000',"5000-5500","5500-6000", ">6000"];
+for (var i = 0; i <8; i++) {
+  legend.add(Row(palette[i], names[i]));}  
+Map.add(legend);
